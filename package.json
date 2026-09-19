@@ -1,5 +1,5 @@
 {
-	"name": "fe-take-home",
+	"name": "array-northwind-interview",
 	"private": true,
 	"version": "0.0.1",
 	"type": "module",
@@ -11,13 +11,15 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"format": "prettier --write .",
-		"lint": "prettier --check . && eslint ."
+		"lint": "prettier --check . && eslint .",
+		"test": "vitest run",
+		"test:watch": "vitest"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^1.4.0",
 		"@eslint/js": "^9.39.1",
 		"@sveltejs/adapter-auto": "^3.0.0",
-		"@sveltejs/kit": "^2.5.28",
+		"@sveltejs/kit": "2.5.28",
 		"@sveltejs/vite-plugin-svelte": "^3.1.2",
 		"@types/node": "^22",
 		"eslint": "^9.39.1",
@@ -30,6 +32,7 @@
 		"svelte-check": "^3.8.6",
 		"typescript": "^5.9.3",
 		"typescript-eslint": "^8.47.0",
-		"vite": "^5.4.11"
+		"vite": "^5.4.11",
+		"vitest": "2.1.9"
 	}
 }

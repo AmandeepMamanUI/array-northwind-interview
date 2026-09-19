@@ -1,137 +1,93 @@
-## Developing
+# NorthWind Banking Challenge
 
-Ensure you're using node version ^24.12.0
+A small responsive banking application built with SvelteKit 4 and TypeScript using Array's provided starter repository, Figma design, and NorthWind API.
 
-IMPORTANT NOTE:
+## Features
 
-This project uses Svelte v4, the legacy docs for this are available [here](https://svelte.dev/docs/svelte/legacy-overview)
+- View account names, numbers, balances, and statuses
+- Visually distinguish unavailable accounts
+- Transfer funds between active accounts
+- Validate account selections, transfer amounts, and available balances
+- Display loading, error, success, and empty states
+- Show recent transfers from the API and recent activity from documented mock data
+- Support desktop and mobile layouts
 
-Once you've created a project and installed dependencies with `npm install`, start a development server:
+## Run locally
+
+1. Make sure Node.js and npm are installed.
+2. Copy `.env.example` to `.env`.
+3. Replace `[API_Key]` in `.env` with the provided NorthWind API key.
+4. Make sure another application is not using port `5173`. Stop it first if necessary.
+5. Install the dependencies:
+
+```sh
+npm install
+```
+
+6. Start the application:
 
 ```sh
 npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
 ```
 
-## Building
+Open `http://localhost:5173`.
 
-To create a production version of your app:
+## Test and verify
+
+Run the unit tests:
 
 ```sh
+npm test
+```
+
+Run the remaining project checks:
+
+```sh
+npm run check
+npm run lint
 npm run build
 ```
 
-You can preview the production build with `npm run preview`.
+## Assumptions
 
-## Interview Instructions
+- `account_holder_name` is displayed as the account name because the account response does not provide a separate descriptive-name field.
+- Any account status other than `active` is treated as `inactive` and is disabled in transfer dropdowns.
+- A successful response from `POST /external/transfers/initiate` is treated as a successful submission, including a `PENDING` transfer. The success receipt is then displayed.
+- After a successful submission, the confirmed transfer amount is immediately applied to the shared account store. A later full-page reload fetches the latest balances from the API.
+- Transfer requests use `OUTBOUND` for direction, `ACH` for transfer type, `Internal account transfer` for the description, and a generated UUID-based reference number because these required values are not represented in the UI.
+- The Figma Recent Activity examples are used as mock data because the API does not provide purchases, deposits, or interest activity. Recent transfers use live API data.
+- The amount field is labeled `Transfer amount` because the Figma label `Transfer to` duplicates the destination-account label.
+- UI pagination is not included because it is not required by the challenge or shown in the design. The account request uses the API maximum of 100 records.
+- The transfer form validates that:
 
-**SvelteKit Frontend Exercise (Paid)**  
-This paid exercise is designed to evaluate how you design, structure, and implement a small SvelteKit application under realistic constraints. You will be working in a SvelteKit codebase we've provided, using Svelte & TypeScript throughout.
+A source account is selected.
+A destination account is selected.
+The source and destination accounts are different.
+The transfer amount is greater than zero.
+The transfer amount does not exceed the available source-account balance.
 
----  
+- No additional transfer-limit rule is enforced because no explicit transfer threshold was provided in the API documentation or requirements.
 
-**Time Expectation**  
-You may take up to two days to complete this exercise. You are not expected to use the full time, and partial solutions are acceptable.
+## Architecture decisions
 
----  
-  
-**Technology & Constraints**  
-The application should be built using SvelteKit and TypeScript and styled with plain CSS (or SCSS if already configured). A shared CSS variables stylesheet has been provided and should be used consistently for spacing, colors, and typography. Please do not use Tailwind, component libraries, or other styling frameworks.
+- The Accounts view uses `/`, and the transfer view uses `/balance-transfer`. Separate routes keep navigation and direct links clear without adding unnecessary routing complexity.
+- Browser requests go through SvelteKit server endpoints. This keeps the API key out of client-side code and provides one place for request validation and API error handling.
+- NorthWind responses are treated as untrusted data and explicitly parsed into TypeScript application types at the server boundary.
+- Transfer rules are validated in the browser for immediate feedback and again on the server before the NorthWind request is sent.
+- A small Svelte account store shares balances between the Accounts and Balance Transfer routes. Form, loading, and error state remain local to the page where they are used.
+- Native form controls and semantic HTML are used for keyboard support, labeling, focus behavior, and screen-reader compatibility.
+- The Transfer Summary acts as the pre-submission review. `Complete transfer` submits directly to match the Figma flow, and the API result is shown as a receipt-style success or error state.
+- Styling uses plain CSS, the provided variables, and responsive media queries without a component or styling framework.
+- Unit tests focus on transfer validation and NorthWind API boundaries because they contain the highest-risk business and integration behavior.
+  -Visual and responsive behavior was verified manually. One limitation I identified is the native dropdown experience on some mobile and tablet screen sizes, where the opened menu does not align as closely with the select control as I would prefer. I considered replacing it with a custom select component or introducing a third-party library, but decided against making that change late in the implementation due to the added complexity, accessibility considerations, and risk of losing reliable native browser behavior. Given the scope of the assignment, I chose to retain the native select and document this as an area for future refinement.
+- The account selection dropdown displays the account name, account type, balance, and whether the account is active/available. I chose to include this information so users have enough context to clearly understand which accounts they are transferring between before making a selection. I also found that transfers from a CD account to checking or savings accounts are not permitted by the API. In those cases, I surface the error message returned by the API rather than introducing additional client-side assumptions around transfer eligibility. I matched the implementation to the provided Figma designs as closely as possible within the scope of the assignment. With additional time and deeper design review, there would likely be further opportunities to refine spacing, sizing, and other CSS details, but the current implementation prioritizes functional accuracy, responsiveness, and consistency with the provided design direction.
+  -After a successful transfer, the application's account state is updated so that the Accounts page reflects the new balances immediately. This keeps the UI consistent with the assignment requirement to update account balances without requiring the user to manually reload the application. If the API response provides updated account information, that response is treated as the source of truth. Otherwise, the local account state is updated using the completed transfer amount.
+-
 
-Svelte 4 should be used for this project. Svelte legacy documentation is available here:  
-https://svelte.dev/docs/svelte/legacy-overview
+## API endpoints
 
-Additional constraints:
+- `GET /external/accounts`
+- `GET /external/transfers`
+- `POST /external/transfers/initiate`
 
-- State management is up to you and may include component state, Svelte stores, or derived state
-- API requests should use only the provided endpoints
-- Prioritize clarity, correctness, and maintainability over abstraction or premature optimization
-
----
-
-**Design & UI**  
-You will receive a Figma design or static UI reference along with API documentation. The UI should closely match the intended layout, spacing, and visual hierarchy shown in the design. Pixel-perfect accuracy is not required, but the result should feel deliberate and well aligned with the reference.
-
-Accessibility should be intentionally considered in your markup and styling, including semantic HTML, proper labeling of form controls, keyboard navigability, visible focus states, and appropriate use of color contrast with the provided CSS variables.
-
----
-
-**Application Structure**  
-The application consists of two primary views: an Accounts view and a Balance Transfer view. These views represent different states of the same application and do not need to be implemented as separate routes. Conditional rendering—such as switching views based on a local page value—is perfectly acceptable, and the overall structure and navigation approach are left to your discretion.
-
-You may also choose to implement these views as separate routes if you feel that better matches your design approach; we will not penalize either choice.
-
----
-
-**Accounts View**  
-The Accounts view should fetch a list of bank accounts from the API and present relevant information in a clear and readable format.
-
-At a minimum, the view should:
-
-- Display the account name, account number, balance, and active or inactive status
-- Visually distinguish inactive accounts
-- Handle loading and error states gracefully
-
-Optional enhancements such as masking account numbers or displaying an empty state are welcome but not required.
-
----
-
-**Balance Transfer View**  
-The Balance Transfer view allows a user to move funds between accounts and should be built as a simple, well-validated form.
-
-The view should include:
-
-- “From” and “To” account dropdowns and an input for the transfer amount
-- Inactive accounts listed but not selectable in the dropdowns
-
-In addition:
-
-- Use frontend validation before sending transfer requests - transfers should be prevented for accounts that are not active, or if the amount exceeds the available balance
-- A successful response should display a confirmation message, reset the form, and update the account balances
-- A failed response should display a clear, user-visible error message
-
----
-
-**API Contract & TypeScript Usage**  
-API documentation will describe request and response shapes. We expect explicit TypeScript types or interfaces to be defined for account data, API responses, and transfer request payloads.
-
-In particular:
-
-- API data should be treated as untrusted until it has been typed and handled at the boundaries of your application
-- Avoid relying on implicit typing from `fetch`
-- Network and parsing errors should be handled explicitly
-- Types should drive component props, local state, and any shared state
-- If no feasible API endpoint exists to provide the correct data for a UI element, using mock data is acceptable
-
-Mock data should only be used for UI elements that cannot be reasonably derived from the provided API responses, and any such usage should be clearly documented in the README.
-
----
-
-**What We’re Evaluating**  
-When reviewing submissions, we focus on the following areas:
-
-- **TypeScript:** strong typing throughout the application with minimal use of `any`
-- **Component structure:** clean separation of concerns and sensible parent/child relationships
-- **Markup & styling:** semantic, accessible HTML; clean, maintainable CSS; and consistent use of provided variables
-- **State management:** clear and predictable state flow with appropriate use of local state and stores
-- **Error handling:** thoughtful handling of API failures, validation errors, and user feedback
-
----
-
-**Submission**  
-Please submit:
-
-- A PR containing your work, submitted no more than 2 days after materials provided
-- Updates to the README noting any assumptions or trade-offs, and describing what you would improve with more time
-
----
-
-**Important Links**  
-  
-  Figma password and API key will be provided by the Array talent team.
-
-- **API documentation:** https://northwind.dev.array.io/swagger/index.html#/
-- **Figma:** https://www.figma.com/design/MHYrsFt7CEgzyGu3PhyuKV/Array-front-end-interview?node-id=0-1&p=f&m=dev
-- **Svelte Documentation:** https://svelte.dev/docs/svelte/legacy-overview
+The API key is read only by the SvelteKit server and should never be committed to the repository.
